@@ -5,12 +5,8 @@
 
     Class for streamable markov chain
 """
-from collections import Counter, defaultdict
-import numpy as np
-
-
-def has_sentence_boundary(bigram):
-    return bigram[0].endswith('.')
+from collections import defaultdict
+import random
 
 
 class MarkovGenerator(object):
@@ -22,61 +18,48 @@ class MarkovGenerator(object):
 
     def draw(self):
         tokens = []
-        word = self.initial_state.draw()
+        word_idx = self.initial_state.draw()
+        word = self.word_list[word_idx]
         while not word.endswith('.'):
             tokens.append(word)
-            word = self.word_states[word].draw()
+            word_idx = self.word_states[word_idx].draw()
+            word = self.word_list[word_idx]
+
         tokens.append(word)
         return ' '.join(tokens).capitalize()
 
     def receive(self, bigram):
-        if has_sentence_boundary(bigram):
-            self.initial_state.receive(bigram[1])
+        ix_1, ix_2 = self.bigrams_to_indices(bigram)
+
+        if self.word_list[ix_1].endswith('.'):
+            self.initial_state.receive(ix_2)
             return
-        self.word_states[bigram[0]].receive(bigram[1])
+
+        self.word_states[ix_1].receive(ix_2)
+
+    def bigrams_to_indices(self, bigram):
+        indices = []
+        for word in bigram:
+            if word in self.word_index:
+                indices.append(self.word_index[word])
+            else:
+                ix = len(self.word_list)
+                self.word_list.append(word)
+                self.word_index[word] = ix
+                indices.append(ix)
+        return indices
 
 
 class WordState(object):
     """
     Information and methods for transitioning from a word
     """
+
     def __init__(self):
-        self.cumsum = []
-        self.labels = []
-        self.count = 0.
+        self.adjacencies = []
 
     def receive(self, word):
-        word_counts = self._recover_word_counts()
-        self.count += 1
-
-        if word not in word_counts:
-            self.labels.append(word)
-        word_counts[word] += 1
-
-        self._set_cumsum(word_counts)
-
-    def _recover_word_counts(self):
-        freq_vector = [
-            (self.cumsum[i] - (self.cumsum[i - 1] if i > 0 else 0.))
-            for i, _ in enumerate(self.cumsum)
-        ]
-
-        return Counter({
-            k: self.count * v
-            for k, v in zip(self.labels, freq_vector)
-        })
-
-    def _set_cumsum(self, word_counts):
-        freq_vector = [
-            word_counts[w] / self.count
-            for w in self.labels
-        ]
-
-        self.cumsum = []
-        running_total = 0.
-        for freq in freq_vector:
-            running_total += freq
-            self.cumsum.append(running_total)
+        self.adjacencies.append(word)
 
     def draw(self):
-        return self.labels[np.searchsorted(self.cumsum, np.random.rand())]
+        return random.choice(self.adjacencies)
