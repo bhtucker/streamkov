@@ -2,52 +2,81 @@
 """
     markov
     ~~~~~~
- 
+
     Class for streamable markov chain
 """
 from collections import Counter, defaultdict
 import numpy as np
 
 
+def has_sentence_boundary(bigram):
+    return bigram[0].endswith('.')
+
+
 class MarkovGenerator(object):
-    def __init__(self, bigram_counts, word_counts, start_words):
-        self.bigram_counts = bigram_counts
-        self.word_counts = word_counts
-        self.word_list = word_counts.keys()
-        self.start_words = start_words
-        self._do_math()
+    def __init__(self):
+        self.word_list = []
+        self.word_index = {}
+        self.word_states = defaultdict(WordState)
+        self.initial_state = WordState()
 
     def draw(self):
         tokens = []
-        word_idx = int(np.random.multinomial(
-            1, self.initial_state_prob_vec
-        ).argmax())
-        word = self.word_list[word_idx]
+        word = self.initial_state.draw()
         while not word.endswith('.'):
             tokens.append(word)
-            word_idx = int(np.random.multinomial(
-                1, self.transition_matrix[word_idx, :]
-            ).argmax())
-            word = self.word_list[word_idx]
+            word = self.word_states[word].draw()
         tokens.append(word)
         return ' '.join(tokens).capitalize()
 
-    def _do_math(self):
-        self.total_start_words = float(sum([
-            count
-            for word, count in self.word_counts.iteritems()
-            if word in self.start_words]))
-        self.initial_state_prob_vec = np.array(
-            [
-                ((self.word_counts[w] if w in self.start_words else 0.0)
-                 / self.total_start_words)
-                for w in self.word_list]
-        )
-        self.transition_matrix = np.vstack(
-            [np.array(
-                [self.bigram_counts[(w1, w2)] / float(self.word_counts[w1])
-                 for w2 in self.word_list]
-            )
-                for w1 in self.word_list
-            ]
-        )
+    def receive(self, bigram):
+        if has_sentence_boundary(bigram):
+            self.initial_state.receive(bigram[1])
+            return
+        self.word_states[bigram[0]].receive(bigram[1])
+
+
+class WordState(object):
+    """
+    Information and methods for transitioning from a word
+    """
+    def __init__(self):
+        self.cumsum = []
+        self.labels = []
+        self.count = 0.
+
+    def receive(self, word):
+        word_counts = self._recover_word_counts()
+        self.count += 1
+
+        if word not in word_counts:
+            self.labels.append(word)
+        word_counts[word] += 1
+
+        self._set_cumsum(word_counts)
+
+    def _recover_word_counts(self):
+        freq_vector = [
+            (self.cumsum[i] - (self.cumsum[i - 1] if i > 0 else 0.))
+            for i, _ in enumerate(self.cumsum)
+        ]
+
+        return Counter({
+            k: self.count * v
+            for k, v in zip(self.labels, freq_vector)
+        })
+
+    def _set_cumsum(self, word_counts):
+        freq_vector = [
+            word_counts[w] / self.count
+            for w in self.labels
+        ]
+
+        self.cumsum = []
+        running_total = 0.
+        for freq in freq_vector:
+            running_total += freq
+            self.cumsum.append(running_total)
+
+    def draw(self):
+        return self.labels[np.searchsorted(self.cumsum, np.random.rand())]

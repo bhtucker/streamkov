@@ -1,0 +1,36 @@
+Streaming In:
+receive (w1, w2):
+    is w2 a start word?
+        if so, do start word stuff
+        end
+    is w2 in the corpus?
+        (in self.word_index)
+        if not:
+            ix = len(self.word_list)
+            self.word_list.append(w2)
+            self.word_index[w2] = ix
+            self.word_states[w2] = WordState()
+    does 
+
+    does w1 have a vector?
+        if w2 is not new:
+        recover transition count vector for w1
+        increment w2
+        reconstruct frequency vector
+        reconstruct cumsum vector
+        save; end
+        if w2 is new:
+
+Use within Webapp:
+    webapp:
+        two form elements:
+            one: draw a sentence
+            two: input a url
+        {user inputs url}
+        app gets content
+        app begins sending messages to MG to receive
+        {user requests sentence}
+        app asks MG to draw
+        MG returns sentence
+        MG resumes processing of 'receive' inbox
+
