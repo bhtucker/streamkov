@@ -15,7 +15,7 @@ import asyncio
 def receiver(queue, mk):
     while True:
         item = yield from queue.get()
-        print("receiving %s" % str(item))
+        # print("receiving %s" % str(item))
         mk.receive(item)
         asyncio.sleep(0)
 
@@ -39,6 +39,6 @@ def dripfeeder(in_queue, out_queue):
         elif item.startswith('static'):
             bi_gen = bigrams_from_upload(item)
         for bigram in bi_gen:
-            print("putting %s" % str(bigram))
+            # print("putting %s" % str(bigram))
             yield from out_queue.put(bigram)
             asyncio.sleep(0)
