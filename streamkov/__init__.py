@@ -5,3 +5,5 @@
 
     Core module for streaming markov package
 """
+
+from . import text, markov
