@@ -26,8 +26,8 @@ def bigrams_from_url(url):
 
 
 def bigrams_from_upload(filename):
-    f = open(filename, 'r')
-    return generate_bigrams(f)
+    with open(filename, 'r') as f:
+        yield from generate_bigrams(f)
 
 
 @asyncio.coroutine
