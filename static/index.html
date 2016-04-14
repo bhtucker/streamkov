@@ -13,9 +13,36 @@
     <input type="submit" value="submit" />
 </form>
 
-<ul>
+<ul id="availablechains">
 	<li>this is the static page</li>
 </ul>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+
+<script type="text/javascript">
+    
+function updateChains (chains) {
+    for (var i = chains.length - 1; i >= 0; i--) {
+        $("#availablechains").append(
+            '<li><a href=load/' + chains[i].id + '>'
+            + chains[i].name + '</a></li>');
+    };
+}
+
+function showChains() {
+    var url = '/chains';
+    $.ajax({
+        url: url,
+        type: 'get',
+        success: function(data) {
+            updateChains(data.chains);
+        },
+        error: function(err) {
+            console.log(err)
+        }
+    })
+}
+</script>
 
 </body>
 </html>

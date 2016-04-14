@@ -9,7 +9,7 @@ from collections import deque
 
 
 def clean(token):
-    return ''.join(filter(lambda v: ord(v) < 180, token)).lower()
+    return ''.join(filter(lambda v: ord(v) < 180, token)).lower().replace('"', '')
 
 
 def tokenize(line):

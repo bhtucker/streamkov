@@ -6,4 +6,4 @@
     Core module for streaming markov package
 """
 
-from . import text, markov
+CONNECTION_STRING = 'postgresql://streamkov@localhost:5432/streamkov'
