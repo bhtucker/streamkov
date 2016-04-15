@@ -8,7 +8,7 @@
 import asyncio
 from aiohttp import web
 from aiohttp_index import IndexMiddleware
-from streamkov import markov, text, worker, views, models
+from streamkov import markov, text, worker, views, models, utils
 from sqlalchemy.orm import sessionmaker
 
 
@@ -16,7 +16,8 @@ if __name__ == '__main__':
     # initialize app-level globals
     bigram_queue = asyncio.Queue()
     file_queue = asyncio.Queue()
-    mk = markov.MarkovGenerator()
+    mk = utils.MarkovGeneratorProxy()
+    mk.set_chain(markov.MarkovGenerator())
     session = sessionmaker(bind=models.engine)()
 
     # setup queue consumers
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     app.router.add_route('GET', '/read/{url}', views.readurl)
     app.router.add_route('GET', '/chains', views.chains)
     app.router.add_route('GET', '/load/{id}', views.load)
+    app.router.add_route('GET', '/blend/{ids}', views.blend)
     app.router.add_route('POST', '/store/txt', views.store_txt_handler)
     app.router.add_route('GET', '/persist/{name}', views.persist)
 

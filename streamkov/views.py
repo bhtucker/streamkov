@@ -8,7 +8,8 @@
 import asyncio
 from aiohttp import web
 from uuid import uuid4
-from streamkov import models, markov
+from streamkov import models, markov, metamarkov
+from utils import rollback_on_error
 
 
 @asyncio.coroutine
@@ -36,6 +37,7 @@ def draw(request):
 
 
 @asyncio.coroutine
+@rollback_on_error
 def persist(request):
     name = request.match_info.get('name', "Anonymous")
     mk = request.app['mk']
@@ -57,6 +59,7 @@ def chains(request):
 
 
 @asyncio.coroutine
+@rollback_on_error
 def load(request):
     session = request.app['sa_session']
     _id = request.match_info.get('id', "Anonymous")
@@ -64,7 +67,27 @@ def load(request):
     chain = session.query(models.Chain).filter_by(id=_id).first()
     mk = markov.MarkovGenerator.from_dict(chain.state)
     print(mk.draw())
-    request.app['mk'] = mk
+    request.app['mk'].set_chain(mk)
+    return web.json_response(True)
+
+
+@asyncio.coroutine
+@rollback_on_error
+def blend(request):
+    session = request.app['sa_session']
+    chain_ids = map(int, request.match_info.get('ids', '').split(','))
+    chains = (
+        session.query(models.Chain)
+        .filter(models.Chain.id.in_(chain_ids))
+        .all()
+    )
+    component_generators = [
+        markov.MarkovGenerator.from_dict(chain.state)
+        for chain in chains
+    ]
+    mk = metamarkov.MetaMarkov(*component_generators)
+    print(mk.draw())
+    request.app['mk'].set_chain(mk)
     return web.json_response(True)
 
 
@@ -73,8 +96,6 @@ def store_txt_handler(request):
     data = yield from request.post()
     file_queue = request.app['file_queue']
     txt = data['txt']
-    # .filename contains the name of the file in string format.
-    filename = txt.filename
     # .file contains the actual file data that needs to be stored somewhere.
     txt_file = data['txt'].file
     content = txt_file.read()
