@@ -33,7 +33,8 @@ def readurl(request):
 def draw(request):
     mk = request.app['mk']
     text = mk.draw()
-    return web.Response(body=text.encode('utf-8'))
+    return web.json_response(text)
+#     web.Response(body=text.encode('utf-8'))
 
 
 @asyncio.coroutine
@@ -53,9 +54,9 @@ def persist(request):
 def chains(request):
     session = request.app['sa_session']
     chains = session.query(models.Chain).all()
-    return web.json_response(dict(chains=[
+    return web.json_response([
         dict(name=x.name, id=x.id)
-        for x in chains]))
+        for x in chains])
 
 
 @asyncio.coroutine
