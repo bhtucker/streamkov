@@ -6,6 +6,8 @@
     Do things more reliably
 """
 from functools import wraps
+from streamkov import api
+import pickle
 
 
 def rollback_on_error(fn):
@@ -40,3 +42,15 @@ class MarkovGeneratorProxy(object):
 
     def set_chain(self, chain):
         self._mk = chain
+
+
+# def get_timeline(twitter_url):
+#     tokens = twitter_url.split('/')
+#     user = tokens[tokens.index('twitter.com') + 1]
+#     return api.user_timeline(user)
+
+# offline mock
+def get_timeline(twitter_url):
+    with open('example_timeline.pkl', 'rb') as pkf:
+        ut = pickle.load(pkf)
+    return ut

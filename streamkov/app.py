@@ -31,15 +31,16 @@ if __name__ == '__main__':
     # setup http app
     app = web.Application(middlewares=[IndexMiddleware()])
 
+
     app.router.add_route('GET', '/draw/', views.draw)
     app.router.add_route('GET', '/read/{url}', views.readurl)
-    app.router.add_route('GET', '/chains', views.chains)
+    app.router.add_route('GET', '/chains/', views.chains)
     app.router.add_route('GET', '/load/{id}', views.load)
     app.router.add_route('GET', '/blend/{ids}', views.blend)
     app.router.add_route('POST', '/store/txt', views.store_txt_handler)
     app.router.add_route('GET', '/persist/{name}', views.persist)
 
-    app.router.add_static('/', 'static')
+    app.router.add_static('/', 'frontend/dist/')
     app['mk'] = mk
     app['file_queue'] = file_queue
     app['sa_session'] = session

@@ -52,6 +52,8 @@ def persist(request):
 
 @asyncio.coroutine
 def chains(request):
+    print('got a request')
+    print(request.headers)
     session = request.app['sa_session']
     chains = session.query(models.Chain).all()
     return web.json_response([
@@ -89,7 +91,7 @@ def blend(request):
     mk = metamarkov.MetaMarkov(*component_generators)
     print(mk.draw())
     request.app['mk'].set_chain(mk)
-    return web.json_response(True)
+    return web.json_response([dict(name=chain.name, id=chain.id) for chain in chains])
 
 
 @asyncio.coroutine
