@@ -16,12 +16,13 @@ class MarkovGenerator(object):
         self.word_index = {}
         self.word_states = defaultdict(WordState)
         self.initial_state = WordState()
+        self.sources = []
 
     def draw(self):
         tokens = []
         word_idx = self.initial_state.draw()
         word = self.word_list[word_idx]
-        while not word.endswith('.'):
+        while not self.word_states[word_idx].is_stop_word():
             tokens.append(word)
             word_idx = self.word_states[word_idx].draw()
             word = self.word_list[word_idx]
@@ -89,3 +90,6 @@ class WordState(object):
     @cached_property
     def mapped_adjacencies(self):
         return list(map(self.mapper, self.adjacencies))
+
+    def is_stop_word(self):
+        return not self.adjacencies

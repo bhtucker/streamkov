@@ -7,7 +7,8 @@
 """
 
 from streamkov.text import generate_bigrams, decode_lines
-from streamkov.utils import get_timeline
+from streamkov.utils import get_timeline, slow_sorted_lines
+from streamkov import logger
 import requests
 import asyncio
 
@@ -16,9 +17,9 @@ import asyncio
 def receiver(queue, mk):
     while True:
         item = yield from queue.get()
-        # print("receiving %s" % str(item))
+        logger.info("receiving %s" % str(item))
         mk.receive(item)
-        asyncio.sleep(0)
+        yield from asyncio.sleep(0)
 
 
 def bigrams_from_url(url):
@@ -36,17 +37,28 @@ def bigrams_from_twitter(twitter_url):
     return generate_bigrams((v.text for v in get_timeline(twitter_url)))
 
 
+def demonstration_bigrams():
+    return generate_bigrams(slow_sorted_lines())
+
+
 @asyncio.coroutine
-def dripfeeder(in_queue, out_queue):
+def dripfeeder(file_queue, bigram_queue):
     while True:
-        item = yield from in_queue.get()
+        item = yield from file_queue.get()
+        logger.info('handling %s' % item)
         if 'twitter.com' in item:
+            logger.info('handling %s as twitter' % item)
             bi_gen = bigrams_from_twitter(item)
+        elif 'demo' in item:
+            logger.info('handling %s as demo!!' % item)
+            bi_gen = demonstration_bigrams()
         elif item.startswith('http'):
+            logger.info('handling %s as text url' % item)
             bi_gen = bigrams_from_url(item)
         elif item.startswith('static'):
+            logger.info('handling %s as local file' % item)
             bi_gen = bigrams_from_upload(item)
         for bigram in bi_gen:
-            # print("putting %s" % str(bigram))
-            yield from out_queue.put(bigram)
-            asyncio.sleep(0)
+            logger.info("putting %s" % str(bigram))
+            yield from bigram_queue.put(bigram)
+            yield from asyncio.sleep(0)

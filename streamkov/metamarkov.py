@@ -61,6 +61,9 @@ class MetaWordState(object):
 
         return random.choice(choices)
 
+    def is_stop_word(self):
+        return not any([c.adjacencies for c in self.component_states])
+
 
 def make_mapper(child_mg, parent_mm):
     # returns a function mapping from a child's index to the master index

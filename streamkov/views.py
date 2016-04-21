@@ -8,33 +8,42 @@
 import asyncio
 from aiohttp import web
 from uuid import uuid4
-from streamkov import models, markov, metamarkov
+from streamkov import models, markov, metamarkov, logger
 from utils import rollback_on_error
 
 
 @asyncio.coroutine
 def readurl(request):
+    """
+    Read the text at provided url
+    (or via twitter api if you provide http://twitter.com/{username})
+    And feed this into a new MarkovGenerator
+    """
     url = request.match_info.get('url', "Anonymous")
     file_queue = request.app['file_queue']
 
-    if url.startswith('http'):
+    logger.info('file queue size: %s' % file_queue.qsize())
+    logger.info('handling url: %s' % url)
+    request.app['mk'].set_chain(markov.MarkovGenerator())
+    try:
         file_queue.put_nowait(url)
+        request.app['mk'].sources.append(url)
         success = True
-    else:
+    except:
         success = False
-
-    text = "%s processing URL: %s" % (
-        'Success' if success else 'Failed', url
-    )
-    return web.Response(body=text.encode('utf-8'))
+    logger.info('file queue size: %s' % file_queue.qsize())
+    return web.json_response(dict(
+        success=success,
+        modelName='_'.join(url.split('/')[-2:])
+    ))
 
 
 @asyncio.coroutine
 def draw(request):
     mk = request.app['mk']
+    logger.info('DRAWING!')
     text = mk.draw()
     return web.json_response(text)
-#     web.Response(body=text.encode('utf-8'))
 
 
 @asyncio.coroutine
@@ -46,14 +55,11 @@ def persist(request):
     chain = models.Chain(state=mk.to_dict(), name=name)
     session.add(chain)
     session.commit()
-    text = 'Success'
-    return web.Response(body=text.encode('utf-8'))
+    return web.json_response(dict(success=True, modelName=name))
 
 
 @asyncio.coroutine
 def chains(request):
-    print('got a request')
-    print(request.headers)
     session = request.app['sa_session']
     chains = session.query(models.Chain).all()
     return web.json_response([
@@ -61,17 +67,17 @@ def chains(request):
         for x in chains])
 
 
-@asyncio.coroutine
-@rollback_on_error
-def load(request):
-    session = request.app['sa_session']
-    _id = request.match_info.get('id', "Anonymous")
-    print('handling request for model %s' % _id)
-    chain = session.query(models.Chain).filter_by(id=_id).first()
-    mk = markov.MarkovGenerator.from_dict(chain.state)
-    print(mk.draw())
-    request.app['mk'].set_chain(mk)
-    return web.json_response(True)
+# @asyncio.coroutine
+# @rollback_on_error
+# def load(request):
+#     session = request.app['sa_session']
+#     _id = request.match_info.get('id', "Anonymous")
+#     print('handling request for model %s' % _id)
+#     chain = session.query(models.Chain).filter_by(id=_id).first()
+#     mk = markov.MarkovGenerator.from_dict(chain.state)
+#     print(mk.draw())
+#     request.app['mk'].set_chain(mk)
+#     return web.json_response(True)
 
 
 @asyncio.coroutine
@@ -91,7 +97,9 @@ def blend(request):
     mk = metamarkov.MetaMarkov(*component_generators)
     print(mk.draw())
     request.app['mk'].set_chain(mk)
-    return web.json_response([dict(name=chain.name, id=chain.id) for chain in chains])
+    return web.json_response([
+        dict(name=chain.name, id=chain.id) for chain in chains
+    ])
 
 
 @asyncio.coroutine

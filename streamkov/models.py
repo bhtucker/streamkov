@@ -6,12 +6,12 @@
     SQLAlchemy models for streamkov app
 """
 
-# import asyncio
-# from aiopg.sa import create_engine
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from streamkov import CONNECTION_STRING
+
 
 engine = sa.engine.create_engine(CONNECTION_STRING)
 metadata = sa.MetaData(bind=engine)
@@ -26,3 +26,5 @@ class Chain(Base):
     sources = sa.Column(JSONB)
 
 Base.metadata.create_all(engine)
+
+session = sessionmaker(bind=engine)()

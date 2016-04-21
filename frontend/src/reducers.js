@@ -1,5 +1,5 @@
 import { CHAINS_URL as chainsUrl, INITIAL_STATE } from './config'
-import { INITIALIZE, TOGGLE_CHAIN, RECEIVE_PHRASE, RECEIVE_CHAINS, RECEIVE_MODEL } from './actions'
+import { INITIALIZE, TOGGLE_CHAIN, RECEIVE_PHRASE, RECEIVE_CHAINS, RECEIVE_MODEL, UPDATE_INPUT, NOTIFY_SAVE} from './actions'
 import { combineReducers } from 'redux'
 
 var chainData = [{"id": 1, "name": "hard", }, {"id": 2, "name": "coded"}];
@@ -47,8 +47,26 @@ function reducer(state = INITIAL_STATE, action) {
         chainsLastUpdated: action.receivedAt
       })    
     case RECEIVE_MODEL:
+      // if the model is not 'blended', uncheck everything
+      let chains;
+      if (action.blended) {
+        chains = state.chains;
+      } else {
+        chains = state.chains.map(
+          chain => Object.assign({}, chain, {chkbox: false})
+        );
+      }
       return Object.assign({}, state, {
-        modelName: action.modelName
+        modelName: action.modelName,
+        chains
+      })
+    case NOTIFY_SAVE:
+      return Object.assign({}, state, {
+        saveText: action.value,
+      })
+    case UPDATE_INPUT:
+      return Object.assign({}, state, {
+        inputValue: action.inputValue
       })
     default:
       return state

@@ -9,7 +9,6 @@ import asyncio
 from aiohttp import web
 from aiohttp_index import IndexMiddleware
 from streamkov import markov, text, worker, views, models, utils
-from sqlalchemy.orm import sessionmaker
 
 
 if __name__ == '__main__':
@@ -18,7 +17,7 @@ if __name__ == '__main__':
     file_queue = asyncio.Queue()
     mk = utils.MarkovGeneratorProxy()
     mk.set_chain(markov.MarkovGenerator())
-    session = sessionmaker(bind=models.engine)()
+    # session = sessionmaker(bind=models.engine)()
 
     # setup queue consumers
     loop = asyncio.get_event_loop()
@@ -31,11 +30,9 @@ if __name__ == '__main__':
     # setup http app
     app = web.Application(middlewares=[IndexMiddleware()])
 
-
     app.router.add_route('GET', '/draw/', views.draw)
     app.router.add_route('GET', '/read/{url}', views.readurl)
     app.router.add_route('GET', '/chains/', views.chains)
-    app.router.add_route('GET', '/load/{id}', views.load)
     app.router.add_route('GET', '/blend/{ids}', views.blend)
     app.router.add_route('POST', '/store/txt', views.store_txt_handler)
     app.router.add_route('GET', '/persist/{name}', views.persist)
@@ -43,6 +40,6 @@ if __name__ == '__main__':
     app.router.add_static('/', 'frontend/dist/')
     app['mk'] = mk
     app['file_queue'] = file_queue
-    app['sa_session'] = session
+    app['sa_session'] = models.session
 
     web.run_app(app)

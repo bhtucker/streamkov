@@ -3,7 +3,7 @@ import Chain from './Chain'
 
 const ChainList = ({ chains, onChainClick, blendChains }) => (
      <div className="chainList">
-         <h1>Available models (click name to use):</h1>
+         <h1>Available models:</h1>
             {chains.map(chain =>
               <Chain
                   key={chain.id}
