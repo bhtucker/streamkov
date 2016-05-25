@@ -6,10 +6,10 @@ Stream text into a Markov chain and draw sequences out while processing.
 
 # Features
 
-* Supply URLs to textfiles via `/read/{url}` 
-* Upload textfiles yourself via the form at index
-* Draw sentences from the chain via `/draw/`
-* Even if many files are being processed, you'll be able to draw from the current chain unimpeded.
+* Provide a url to a twitter account or text file to build new markov chains
+* Draw sentences from the current chain with generate button
+* Even while this new data is being read in, you'll be able to draw sentences from the chain so far!
+* You can also combine chains by checking their boxes and hitting 'blend'
 
 # Installation
 
